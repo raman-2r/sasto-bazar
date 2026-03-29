@@ -1,5 +1,6 @@
 // assets/js/main.js
 const API_BASE = '../backend/';
+const PRODUCT_IMG_PATH = '../images/products/';
 
 // Utility: Show Flash Messages
 function showFlash(message, type = 'success') {

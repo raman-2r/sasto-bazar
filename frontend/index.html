@@ -97,7 +97,7 @@
                     html += `
                     <div class="product-card">
                         <div class="product-image">
-                            <img src="../images/products/${p.product_image}" alt="${p.product_name}" onerror="this.src='../images/logo.png'">
+                            <img src="${PRODUCT_IMG_PATH}${p.product_image}" alt="${p.product_name}" onerror="this.src='../images/logo.png'">
                         </div>
                         <div class="product-info">
                             <span class="product-category">${p.category_name}</span>

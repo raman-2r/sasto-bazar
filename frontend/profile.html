@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - SastoBazar</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">SastoBazar</a>
+            <div class="nav-links" id="auth-links"></div>
+        </div>
+    </nav>
+
+    <div class="container profile-layout">
+        <aside class="profile-sidebar">
+            <img id="userAvatar" src="../images/avatars/default.png" alt="Profile" class="profile-avatar">
+            <h3 id="userName">User Name</h3>
+            <p id="userEmail" style="color: var(--text-muted); font-size: 0.9rem;">user@example.com</p>
+            
+            <ul class="profile-nav">
+                <li><a href="#" class="active" data-section="overview">Overview</a></li>
+                <li><a href="#" data-section="my-listings">My Listings</a></li>
+                <li><a href="#" data-section="my-orders">My Orders</a></li>
+                <li><a href="#" data-section="edit-profile">Edit Profile</a></li>
+            </ul>
+        </aside>
+
+        <main class="profile-content">
+            <!-- Overview Section -->
+            <div id="overview" class="content-section active">
+                <h2>Account Overview</h2>
+                <div class="mt-2">
+                    <p><strong>Member Since:</strong> <span id="regDate">...</span></p>
+                    <p><strong>Phone:</strong> <span id="userPhone">...</span></p>
+                    <p><strong>Address:</strong> <span id="userAddress">...</span></p>
+                </div>
+            </div>
+
+            <!-- My Listings Section -->
+            <div id="my-listings" class="content-section">
+                <h2>Your Listed Products</h2>
+                <div id="listingsTable" class="mt-2">
+                    <p>Loading your products...</p>
+                </div>
+            </div>
+
+            <!-- My Orders Section -->
+            <div id="my-orders" class="content-section">
+                <h2>Your Orders (as Buyer)</h2>
+                <div id="ordersTable" class="mt-2">
+                    <p>Loading your orders...</p>
+                </div>
+            </div>
+
+            <!-- Edit Profile Section -->
+            <div id="edit-profile" class="content-section">
+                <h2>Update Your Information</h2>
+                <form id="updateProfileForm" class="mt-2">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="editName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="editPhone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <input type="text" id="editAddress" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select id="editGender" class="form-control">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="../assets/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await checkSession();
+            if (!session.loggedIn) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Tab Switching Logic
+            const navLinks = document.querySelectorAll('.profile-nav a');
+            const sections = document.querySelectorAll('.content-section');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const target = link.getAttribute('data-section');
+
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+
+                    link.classList.add('active');
+                    document.getElementById(target).classList.add('active');
+
+                    if(target === 'my-listings') loadListings();
+                    if(target === 'my-orders') loadOrders();
+                });
+            });
+
+            // Load Initial Data
+            loadProfile();
+        });
+
+        async function loadProfile() {
+            const res = await apiCall('users.php?action=fetch_profile');
+            if (res.success) {
+                const u = res.user;
+                document.getElementById('userName').textContent = u.name;
+                document.getElementById('userEmail').textContent = u.email;
+                document.getElementById('regDate').textContent = u.registration_date;
+                document.getElementById('userPhone').textContent = u.phone;
+                document.getElementById('userAddress').textContent = u.address;
+
+                // Fill Edit Form
+                document.getElementById('editName').value = u.name;
+                document.getElementById('editPhone').value = u.phone;
+                document.getElementById('editAddress').value = u.address;
+                document.getElementById('editGender').value = u.gender;
+            }
+        }
+
+        async function loadListings() {
+            const container = document.getElementById('listingsTable');
+            const res = await apiCall('users.php?action=fetch_my_products');
+            
+            if (res.success && res.products) {
+                if (res.products.length === 0) {
+                    container.innerHTML = '<p>You haven\'t listed any products yet.</p>';
+                    return;
+                }
+
+                let html = '<table class="data-table"><thead><tr><th>Product</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+                res.products.forEach(p => {
+                    html += `
+                    <tr>
+                        <td style="display:flex; align-items:center; gap:10px;">
+                            <img src="${PRODUCT_IMG_PATH}${p.product_image}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                            ${p.product_name}
+                        </td>
+                        <td>Rs. ${p.product_price}</td>
+                        <td><span class="badge ${p.sell_status.toLowerCase()}">${p.sell_status}</span></td>
+                        <td>
+                            <a href="product.html?id=${p.Product_id}" class="btn btn-sm btn-outline">View</a>
+                        </td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            }
+        }
+
+        async function loadOrders() {
+            const container = document.getElementById('ordersTable');
+            const res = await apiCall('orders.php?action=fetch_my_orders');
+
+            if (res.success && res.orders) {
+                if (res.orders.length === 0) {
+                    container.innerHTML = '<p>You haven\'t placed any orders yet.</p>';
+                    return;
+                }
+
+                let html = '<table class="data-table"><thead><tr><th>Product</th><th>Date</th><th>Status</th></tr></thead><tbody>';
+                res.orders.forEach(o => {
+                    html += `
+                    <tr>
+                         <td style="display:flex; align-items:center; gap:10px;">
+                            <img src="${PRODUCT_IMG_PATH}${o.product_image}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                            ${o.product_name}
+                        </td>
+                        <td>${o.order_date}</td>
+                        <td><span class="badge ${o.payment_status.toLowerCase()}">${o.payment_status}</span></td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            }
+        }
+
+        document.getElementById('updateProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                action: 'update_profile',
+                name: document.getElementById('editName').value,
+                phone: document.getElementById('editPhone').value,
+                address: document.getElementById('editAddress').value,
+                gender: document.getElementById('editGender').value
+            };
+
+            const res = await apiCall('users.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.success) {
+                showFlash(res.message);
+                loadProfile();
+            } else {
+                showFlash(res.message, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Center - SastoBazar</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">SastoBazar</a>
+            <div class="nav-links" id="auth-links"></div>
+        </div>
+    </nav>
+
+    <div class="container form-wrapper">
+        <div class="form-card">
+            <h2>Contact Support / Seller</h2>
+            <form id="helpForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="contactName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="contactEmail" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Subject / Seller Reference</label>
+                    <input type="text" id="contactSubject" class="form-control" placeholder="e.g. Question about 'Gaming Laptop'">
+                </div>
+                <div class="form-group">
+                    <label>Your Message / Inquiry</label>
+                    <textarea id="contactMessage" class="form-control" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+            </form>
+            <div id="helpResponse" class="mt-2 text-center" style="display:none; color: var(--secondary); font-weight:600;">
+                Message sent successfully! We will get back to you soon.
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const seller = urlParams.get('seller');
+            if(seller) {
+                document.getElementById('contactSubject').value = `Inquiry for Seller: ${seller}`;
+            }
+        });
+
+        document.getElementById('helpForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Just simulate success
+            document.getElementById('helpForm').style.display = 'none';
+            document.getElementById('helpResponse').style.display = 'block';
+            showFlash('Support request submitted.');
+        });
+    </script>
+</body>
+</html>
