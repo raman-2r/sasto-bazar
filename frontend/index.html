@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SastoBazar - Second Hand Market</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">SastoBazar</a>
+            
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search for products...">
+                <button id="searchBtn">🔍</button>
+            </div>
+
+            <div class="nav-links" id="auth-links">
+                <!-- Injected via main.js checkSession -->
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Find Great Deals on <span>Pre-loved Items</span></h1>
+            <p>Buy and sell trusted second-hand electronics, furniture, vehicles, and more.</p>
+            <a href="#products" class="btn btn-primary">Browse Shop</a>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="categories" id="categoryFilters">
+            <button class="category-btn active" data-category="">All Categories</button>
+            <button class="category-btn" data-category="Electronics">Electronics</button>
+            <button class="category-btn" data-category="Furniture">Furniture</button>
+            <button class="category-btn" data-category="Books">Books</button>
+            <button class="category-btn" data-category="Clothing">Clothing</button>
+            <button class="category-btn" data-category="Vehicles">Vehicles</button>
+            <button class="category-btn" data-category="Others">Others</button>
+        </div>
+    </div>
+
+    <section class="products-section" id="products">
+        <div class="container">
+            <div class="product-grid" id="productGrid">
+                <!-- Products injected here -->
+                <p>Loading amazing products...</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <h3>SastoBazar</h3>
+                    <p>Your premium marketplace for second hand goods.</p>
+                </div>
+                <div>
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="sell.html">Sell Item</a></li>
+                        <li><a href="help.html">Help Center</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2023 SastoBazar. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+    <script>
+        let currentCategory = '';
+        let currentSearch = '';
+
+        async function loadProducts() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '<p>Loading...</p>';
+            
+            let url = `products.php?action=fetch_all&category=${encodeURIComponent(currentCategory)}&search=${encodeURIComponent(currentSearch)}`;
+            // main.js apiCall wrapper
+            const data = await apiCall(url);
+            
+            if (data.success && data.products) {
+                if (data.products.length === 0) {
+                    grid.innerHTML = '<p>No products found matching your criteria.</p>';
+                    return;
+                }
+
+                let html = '';
+                data.products.forEach(p => {
+                    html += `
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="../images/products/${p.product_image}" alt="${p.product_name}" onerror="this.src='../images/logo.png'">
+                        </div>
+                        <div class="product-info">
+                            <span class="product-category">${p.category_name}</span>
+                            <div class="product-title">${p.product_name}</div>
+                            <div class="product-meta">
+                                <span>Used: ${p.product_age}</span>
+                            </div>
+                            <div class="product-price">Rs. ${p.product_price}</div>
+                            <a href="product.html?id=${p.Product_id}" class="btn btn-outline btn-block">View Details</a>
+                        </div>
+                    </div>`;
+                });
+                grid.innerHTML = html;
+            } else {
+                grid.innerHTML = '<p>Failed to load products.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProducts();
+
+            // Search Logic
+            document.getElementById('searchBtn').addEventListener('click', () => {
+                currentSearch = document.getElementById('searchInput').value;
+                loadProducts();
+            });
+            document.getElementById('searchInput').addEventListener('keyup', (e) => {
+                if(e.key === 'Enter') {
+                    currentSearch = document.getElementById('searchInput').value;
+                    loadProducts();
+                }
+            });
+
+            // Category Logic
+            const catBtns = document.querySelectorAll('.category-btn');
+            catBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    catBtns.forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentCategory = e.target.getAttribute('data-category');
+                    loadProducts();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sell an Item - SastoBazar</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">SastoBazar</a>
+            <div class="nav-links" id="auth-links"></div>
+        </div>
+    </nav>
+
+    <div class="form-wrapper container">
+        <div class="form-card wide">
+            <h2>List Your Item for Sale</h2>
+            <form id="sellForm" enctype="multipart/form-data">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Product Name</label>
+                        <input type="text" name="product_name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category_name" class="form-control" required>
+                            <option value="">Select Category</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Furniture">Furniture</option>
+                            <option value="Books">Books</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Vehicles">Vehicles</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Price (Rs.)</label>
+                        <input type="number" name="product_price" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Age of Item (e.g. 2 years, 6 months)</label>
+                        <input type="text" name="product_age" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Product Description</label>
+                        <textarea name="product_bio" class="form-control" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Product Image</label>
+                        <input type="file" name="product_image" class="form-control" accept="image/jpeg, image/png, image/webp" required>
+                    </div>
+                </div>
+                <input type="hidden" name="action" value="add_product">
+                <button type="submit" class="btn btn-primary btn-block mt-2">List Item</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ensure logic checking session first to protect route here -->
+    <script src="../assets/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+             const session = await apiCall('auth.php?action=check');
+             if (!session.loggedIn) {
+                 window.location.href = 'login.html';
+             }
+        });
+
+        document.getElementById('sellForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = document.getElementById('sellForm');
+            const formData = new FormData(form);
+
+            try {
+                const res = await fetch('../backend/products.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showFlash(data.message);
+                    setTimeout(() => window.location.href = 'profile.html', 1500);
+                } else {
+                    showFlash(data.message, 'error');
+                }
+            } catch (err) {
+                showFlash('Failed to upload', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

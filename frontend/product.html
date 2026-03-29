@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - SastoBazar</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">SastoBazar</a>
+            <div class="nav-links" id="auth-links"></div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="product-detail-layout" id="productDetail">
+            <!-- Injected details -->
+            <p>Loading details...</p>
+        </div>
+    </div>
+
+    <script src="../assets/js/main.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        async function loadProduct() {
+            if(!productId) {
+                document.getElementById('productDetail').innerHTML = '<p>Product not specified.</p>';
+                return;
+            }
+
+            const res = await apiCall(`products.php?action=fetch_one&id=${productId}`);
+            const session = await apiCall('auth.php?action=check'); // to see if we own it
+            
+            if (res.success && res.product) {
+                const p = res.product;
+                const isOwner = session.loggedIn && session.user.id == p.user_id;
+
+                let actionHtml = '';
+                if (isOwner) {
+                    actionHtml = `
+                        <div style="display:flex; gap:10px; margin-top:20px;">
+                            <button class="btn btn-danger" onclick="deleteProduct(${p.Product_id})">Delete Listing</button>
+                        </div>
+                    `;
+                } else if (p.sell_status === 'available') {
+                    actionHtml = `
+                        <button class="btn btn-primary btn-block mt-2" onclick="orderProduct(${p.Product_id})">Buy / Order Now</button>
+                    `;
+                } else {
+                    actionHtml = `
+                        <button class="btn btn-secondary btn-block mt-2" disabled>Product Sold</button>
+                    `;
+                }
+
+                document.getElementById('productDetail').innerHTML = `
+                    <div class="product-detail-image">
+                        <img src="../images/products/${p.product_image}" onerror="this.src='../images/logo.png'">
+                    </div>
+                    <div class="product-detail-info">
+                        <span class="product-category">${p.category_name}</span>
+                        <h1>${p.product_name}</h1>
+                        <div class="price-tag">Rs. ${p.product_price}</div>
+                        
+                        <div class="meta-info">
+                            <div>
+                                <span>Used</span>
+                                <strong>${p.product_age}</strong>
+                            </div>
+                            <div>
+                                <span>Status</span>
+                                <strong><span class="badge status-${p.sell_status.toLowerCase()}">${p.sell_status}</span></strong>
+                            </div>
+                        </div>
+
+                        <h3>Description</h3>
+                        <p style="margin-top: 10px; color: var(--text-muted);">${p.product_bio}</p>
+
+                        <div class="seller-card">
+                            <div class="seller-avatar" style="background: url('../images/avatars/default.png') center/cover;"></div>
+                            <div>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">Seller</span>
+                                <strong style="display:block;">${p.seller_name}</strong>
+                            </div>
+                            <a href="help.html?seller=${encodeURIComponent(p.seller_name)}" class="btn btn-outline" style="margin-left: auto;">Send Message</a>
+                        </div>
+                        
+                        ${actionHtml}
+                    </div>
+                `;
+            } else {
+                document.getElementById('productDetail').innerHTML = '<p>Product not found.</p>';
+            }
+        }
+
+        async function orderProduct(id) {
+            const data = await apiCall('orders.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'place_order', product_id: id })
+            });
+
+            if (data.success) {
+                showFlash(data.message);
+                
+                // Simulate Payment Screen Logic directly here to save extra page
+                if (confirm(`Order placed (Order ID: ${data.order_id}). Proceed to simulated payment?`)) {
+                    const payRes = await apiCall('payments.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'confirm_payment', order_id: data.order_id })
+                    });
+                    if (payRes.success) {
+                        alert('Payment Confirmed! Receipt generated.');
+                        window.location.reload();
+                    } else {
+                        alert(payRes.message);
+                    }
+                } else {
+                    window.location.href = 'profile.html'; // view pending order
+                }
+
+            } else {
+                showFlash(data.message, 'error');
+                if (data.message.includes('login')) {
+                    setTimeout(() => window.location.href = 'login.html', 1500);
+                }
+            }
+        }
+
+        async function deleteProduct(id) {
+            if(confirm("Are you sure you want to delete this listing?")) {
+                const data = await apiCall('products.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete_product', product_id: id })
+                });
+                if (data.success) {
+                    showFlash("Listing deleted.");
+                    setTimeout(() => window.location.href = 'profile.html', 1000);
+                } else {
+                    showFlash(data.message, 'error');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProduct);
+    </script>
+</body>
+</html>
